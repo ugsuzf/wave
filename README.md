@@ -1,3 +1,5 @@
+/Users/ugsuzf/Desktop/wave/ss/Screenshot 2024-06-27 at 21.25.19.png
+
 ## H2O Wave
 
 <img src="assets/brand/wave-type-yellow.png" alt="Wave logo">
