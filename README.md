@@ -1,4 +1,5 @@
-/Users/ugsuzf/Desktop/wave/ss/Screenshot 2024-06-27 at 21.25.19.png
+<img width="1239" alt="Screenshot 2024-06-27 at 21 25 19" src="https://github.com/ugsuzf/wave/assets/53346136/bc4a40e0-dcce-4276-8917-c1efce615859">
+
 
 ## H2O Wave
 
