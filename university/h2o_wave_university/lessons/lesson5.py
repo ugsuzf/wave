@@ -25,8 +25,14 @@
 # ## Your task
 # Try to add another textbox component that would work the same as Content textbox, but for card title.
 # ---
+# ---
 from h2o_wave import main, app, Q, ui
+import asyncio
 
+branch_coverage = {
+    "if_submit": False,  # if submit branch
+    "else_not_submit": False  # else not submit branch
+}
 
 @app('/demo')
 async def serve(q: Q):
@@ -40,5 +46,58 @@ async def serve(q: Q):
     if q.args.submit:
         # Update existing card content.
         q.page['hello'].content = q.args.content
+        branch_coverage["if_submit"] = True # Coverage for form submission
+    else:
+        branch_coverage["else_not_submit"] = True   # Coverage for form not submitted
 
     await q.page.save()
+
+def print_coverage():
+    total_branches = len(branch_coverage)
+    hit_branches = sum(branch_coverage.values())
+    coverage_percentage = (hit_branches / total_branches) * 100
+    for branch, hit in branch_coverage.items():
+        print(f"{branch} was {'hit' if hit else 'not hit'}")
+    print(f"Branch coverage: {coverage_percentage:.2f}%")
+
+# Mocking classes for testing
+class MockArgs:
+    def __init__(self, submit, content=''):
+        self.submit = submit
+        self.content = content
+
+class MockPage:
+    def __init__(self):
+        self.cards = {}
+
+    def __setitem__(self, key, value):
+        self.cards[key] = value
+
+    def __getitem__(self, key):
+        return self.cards[key]
+
+    async def save(self):
+        pass
+
+class MockQ:
+    def __init__(self, submit):
+        self.page = MockPage()
+        self.args = MockArgs(submit=submit)
+
+async def test_with_submit():
+    q = MockQ(submit=True)
+    await serve(q)
+    print("After test with submit:")
+    print_coverage()
+
+async def test_without_submit():
+    q = MockQ(submit=False)
+    await serve(q)
+    print("After test without submit:")
+    print_coverage()
+
+async def run_tests():
+    await test_with_submit()
+    await test_without_submit()
+
+asyncio.run(run_tests())
