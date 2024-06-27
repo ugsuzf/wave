@@ -20,11 +20,19 @@
 # ---
 
 from h2o_wave import main, app, Q, ui
+import asyncio
 
+branch_coverage = {
+    "if_client_not_initialized": False,  # if not q.client.initialized branch
+    "if_submit": False,  # if q.args.submit branch
+    "else_initialized": False,  # else initialized branch
+    "else_not_submit":False # else not submit branch
+}
 
 @app('/demo')
 async def serve(q: Q):
     if not q.client.initialized:
+        branch_coverage["if_client_not_initialized"] = True  # Coverage for client not initialized
         # Create cards only once per browser.
         q.page['hello'] = ui.markdown_card(box='1 1 3 1', title='Markdown card', content='Hello World!')
         q.page['form'] = ui.form_card(box='1 2 3 3', items=[
@@ -32,10 +40,79 @@ async def serve(q: Q):
             ui.button(name='submit', label='Submit'),
         ])
         q.client.initialized = True
+    else:
+        branch_coverage["else_initialized"] = True  # Coverage for client initialized
 
     # Handle the button click.
     if q.args.submit:
+        branch_coverage["if_submit"] = True  # Coverage for form submission
         # Update existing card content.
         q.page['hello'].content = q.args.content
+    else:
+        branch_coverage["else_not_submit"] = True  # Coverage for form not submitted
 
     await q.page.save()
+
+def print_coverage():
+    total_branches = len(branch_coverage)
+    hit_branches = sum(branch_coverage.values())
+    coverage_percentage = (hit_branches / total_branches) * 100
+    for branch, hit in branch_coverage.items():
+        print(f"{branch} was {'hit' if hit else 'not hit'}")
+    print(f"Branch coverage: {coverage_percentage:.2f}%")
+
+# Mocking classes for testing
+class MockArgs:
+    def __init__(self, submit=False):
+        self.submit = submit
+        self.content = ""
+
+class MockPage:
+    def __init__(self):
+        self.cards = {}
+
+    def __setitem__(self, key, value):
+        self.cards[key] = value
+
+    def __getitem__(self, key):
+        return self.cards[key]
+
+    async def save(self):
+        pass
+
+class MockClient:
+    def __init__(self, initialized=False):
+        self.initialized = initialized
+
+class MockQ:
+    def __init__(self, submit=False, initialized=False):
+        self.page = MockPage()
+        self.args = MockArgs(submit=submit)
+        self.client = MockClient(initialized=initialized)
+        if initialized:
+            self.page['hello'] = ui.markdown_card(box='1 1 3 1', title='Markdown card', content='Hello World!')
+
+async def test_with_initialization():
+    q = MockQ(initialized=True)
+    await serve(q)
+    print("After test with initialization:")
+    print_coverage()
+
+async def test_without_initialization():
+    q = MockQ(initialized=False)
+    await serve(q)
+    print("After test without initialization:")
+    print_coverage()
+
+async def test_with_submit():
+    q = MockQ(submit=True)
+    await serve(q)
+    print("After test with submit true:")
+    print_coverage()
+
+async def run_tests():
+    await test_with_initialization()
+    await test_without_initialization()
+    await test_with_submit()
+
+asyncio.run(run_tests())
